@@ -1,0 +1,5 @@
+# Local tooling and session configuration
+.electroboy/
+.agents/
+.aws/
+.codex/
