@@ -75,8 +75,6 @@ This separation permits persistent decoder infrastructure while retaining run-sp
 
 A QEC workflow may be invoked from a mixed classical–quantum application rather than from a single, standalone circuit. An application runtime identifies or receives a quantum region, prepares its input circuit and shot request, submits the quantum work, receives results, and resumes the surrounding classical computation. A program can therefore contain multiple quantum regions and may make later quantum work depend on earlier results.
 
-CCAM is one example of a programming model that could follow this pattern. The QEC workflow architecture must support that model without making CCAM a required application interface. The application-facing input may instead be a workflow specification, a higher-level language, OpenQASM, or another circuit source.
-
 ### Facility admission and changing quantum demand
 
 Before a job starts, the workflow engine supplies resource requirements to the workload manager. In a Pathfinder-like facility, Slurm and a QPU resource manager such as QPMD may jointly admit the job and reserve its classical and quantum resources. Relevant estimates include circuit count, maximum depth, expected shot count, QPU time, decoder capacity, accelerator capacity, and network requirements.
@@ -126,10 +124,12 @@ Logical patch definition and physical-qubit assignment are separate decisions:
 | --- | --- |
 | QEC planner | Defines logical patches: code, distance, count, and logical layout. |
 | Scheduler / device runtime | Supplies the available QPU allocation, topology, current constraints, and calibration references. |
-| Compiler / mapper | Assigns each logical patch to concrete physical qubits and emits the circuit schedule, measurement identities, and decoder-binding requirements. |
+| Compiler / mapper | Assigns each logical patch to concrete physical qubits and emits the circuit schedule, measurement identities, and decoder-binding requirements. Other approaches taken by companies like IBM, provide a logical ISA to the control layer and the control layer does all QEC related operations.|
 | Device runtime | Validates that the compiled assignment is still available and usable, then configures the QPU and QEC compute elements from it. |
 
 The compiler owns the definitive physical mapping because it affects gate decomposition, routing, syndrome measurement, timing, and the decoder's interpretation of measurements. Selecting physical qubits only after compilation could invalidate the compiled program.
+
+* Is this true? Will all compilers need to create the logical to physical mapping? Or would some compilers simply compile to a FTQC logical ISA, which is then managed by the device runtime? In the latter case, the device runtime (black-box) will need to compile down to the physical representation. How time sensitive will that be. It's assumed that this will be entirely under the vendor's control. Meaning, they'll need to provide timing guarantees when executing a quantum program. How will this approach handle classical operations meant to run on classical hardware?
 
 The expected order is therefore:
 
@@ -144,7 +144,7 @@ When a compiled artifact already exists, the device runtime may select a compati
 
 ## QEC compilation and decoder binding
 
-QEC compilation should consume an explicit QEC plan. The compiler should not independently select the code family, code distance, or decoder policy.
+QEC compilation should consume an explicit QEC plan (**QEC planner is a configuration side functionality**). The compiler should not independently select the code family, code distance, or decoder policy. **Will there be a need for applications to configure code family/distance/etc?**
 
 | Stage | Responsibility |
 | --- | --- |
